@@ -34,11 +34,9 @@ class DataTransformation:
 
     def get_data_transformer_object(self):
         """
-        This function creates and returns the preprocessing object
+        Creates and returns the preprocessing object
         """
-
         try:
-            # -------- Column definitions --------
             numerical_columns = [
                 "writing_score",
                 "reading_score"
@@ -52,7 +50,6 @@ class DataTransformation:
                 "test_preparation_course",
             ]
 
-            # -------- Numerical pipeline --------
             num_pipeline = Pipeline(
                 steps=[
                     ("imputer", SimpleImputer(strategy="median")),
@@ -60,13 +57,15 @@ class DataTransformation:
                 ]
             )
 
-            # -------- Categorical pipeline --------
             cat_pipeline = Pipeline(
                 steps=[
                     ("imputer", SimpleImputer(strategy="most_frequent")),
                     (
                         "one_hot_encoder",
-                        OneHotEncoder(handle_unknown="ignore")
+                        OneHotEncoder(
+                            handle_unknown="ignore",
+                            sparse_output=False  # IMPORTANT
+                        )
                     )
                 ]
             )
@@ -74,7 +73,6 @@ class DataTransformation:
             logging.info(f"Numerical columns: {numerical_columns}")
             logging.info(f"Categorical columns: {categorical_columns}")
 
-            # -------- Column Transformer --------
             preprocessor = ColumnTransformer(
                 transformers=[
                     ("num_pipeline", num_pipeline, numerical_columns),
@@ -89,11 +87,9 @@ class DataTransformation:
 
     def initiate_data_transformation(self, train_path, test_path):
         """
-        This function applies preprocessing to train and test datasets
+        Applies preprocessing to train and test datasets
         """
-
         try:
-            # -------- Read data --------
             train_df = pd.read_csv(train_path)
             test_df = pd.read_csv(test_path)
 
@@ -103,7 +99,6 @@ class DataTransformation:
 
             target_column_name = "math_score"
 
-            # -------- Split input & target --------
             input_feature_train_df = train_df.drop(
                 columns=[target_column_name], axis=1
             )
@@ -114,11 +109,8 @@ class DataTransformation:
             )
             target_feature_test_df = test_df[target_column_name]
 
-            logging.info(
-                "Applying preprocessing object on training and testing data"
-            )
+            logging.info("Applying preprocessing on training and testing data")
 
-            # -------- Transform --------
             input_feature_train_arr = preprocessing_obj.fit_transform(
                 input_feature_train_df
             )
@@ -126,7 +118,6 @@ class DataTransformation:
                 input_feature_test_df
             )
 
-            # -------- Combine features + target --------
             train_arr = np.c_[
                 input_feature_train_arr,
                 np.array(target_feature_train_df)
@@ -137,7 +128,6 @@ class DataTransformation:
                 np.array(target_feature_test_df)
             ]
 
-            # -------- Save preprocessor --------
             save_object(
                 file_path=self.data_transformation_config.preprocessor_obj_file_path,
                 obj=preprocessing_obj
